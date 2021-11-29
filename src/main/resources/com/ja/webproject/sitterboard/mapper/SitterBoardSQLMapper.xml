@@ -1,0 +1,262 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.ja.webproject.sitterboard.mapper.SitterBoardSQLMapper"><!--class경로 -->
+	
+	
+<select id="createBoardPK" resultType="int">
+		SELECT HE_SitterBoard_seq.nextval FROM Dual
+</select>
+
+
+<select id="getContents" resultType="com.ja.webproject.vo.HE_SitterBoardVo" > <!-- resultType은 select만 필요하다! 다행 ㅠ -->
+	SELECT * FROM (	
+		SELECT t1.*,ROWNUM as rnum FROM (	
+				SELECT HE_SitterBoard.* FROM HE_SitterBoard ,HE_Member
+				WHERE HE_SitterBoard.member_no = HE_Member.member_no
+				
+				<if test="search_type != null and search_word != null">
+					<choose>
+						<when test="search_type=='title'">
+							AND HE_SitterBoard.title LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='content'">
+							AND HE_SitterBoard.content LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='nick'">
+							AND HE_Member.nick LIKE '%' || #{search_word} ||'%'
+						</when>
+					</choose>
+				</if>
+				ORDER BY sitterboard_no DESC
+			) t1
+		) t2
+		<!-- 문법을 무시하겠다는 xml의 특수문자처리(>이거 써야되니까 ㅠ) -->
+		<![CDATA[                           
+		 WHERE t2.rnum >= (#{page_number }-1)*8+1 
+		 AND t2.rnum <=  #{page_number }*8
+		]]>
+		<!-- 위에 썸네일이니까 6개만 보자 -->
+			
+	</select>
+	
+	<select id="getContentCount" resultType="int">
+			
+		
+				SELECT COUNT(*) FROM HE_SitterBoard ,HE_Member
+				WHERE HE_SitterBoard.member_no = HE_Member.member_no
+			
+				<if test="search_type != null and search_word != null">
+					<choose>
+						<when test="search_type=='title'">
+							AND HE_SitterBoard.title LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='content'">
+							AND HE_SitterBoard.content LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='nick'">
+							AND HE_Member.nick LIKE '%' || #{search_word} ||'%'
+						</when>
+					</choose>
+				</if>
+	</select>
+
+	<insert id="writeContent">    
+	INSERT INTO HE_SitterBoard VALUES(
+    			#{sitterboard_no},
+    			#{member_no},
+    			#{title},
+    			#{content},
+    			#{endDate},
+    			#{possibleArea},
+    			#{latitude},
+    			#{longtitude},
+    			#{contact},
+    			0,
+    			SYSDATE
+    			)
+	</insert>
+	
+		<insert id="registerImage">
+		INSERT INTO HE_SitterBoard_ImageBoard VALUES (
+    		HE_SitterBoard_ImageBoard_seq.nextval,
+    		#{sitterboard_no},
+    		#{imageboard_url},
+    		#{imageboard_ori}
+			)
+	</insert>
+	
+	<update id="increaseReadCount">
+		
+		UPDATE HE_SitterBoard 
+		SET readcount = readcount + 1
+		WHERE sitterboard_no = #{sitterboard_no}
+                
+	
+	</update>
+	
+	<select id="getContentByNo" resultType = "com.ja.webproject.vo.HE_SitterBoardVo">
+	
+		SELECT * FROM HE_SitterBoard WHERE sitterboard_no = #{sitterboard_no}
+		
+	</select>
+	
+	<select id="getImageInfoByBoardNo" resultType="com.ja.webproject.vo.HE_SitterBoard_ImageBoardVo">
+		
+		SELECT * FROM HE_SitterBoard_ImageBoard
+		WHERE sitterboard_no = #{sitterboard_no}
+		ORDER BY imageboard_no ASC
+	
+		
+	</select>
+	
+	<select id="getImageForList" resultType="com.ja.webproject.vo.HE_SitterBoard_ImageBoardVo">
+	
+		SELECT * FROM HE_SitterBoard_ImageBoard
+		WHERE sitterboard_no = #{sitterboard_no }
+		AND ROWNUM = 1 <!-- 한개만 -->
+		ORDER BY imageboard_no ASC
+	
+	</select>
+	
+	<update id="updateContent">
+		
+		UPDATE HE_SitterBoard 
+		SET title = #{title} , content = #{content}
+		WHERE sitterboard_no = #{sitterboard_no}
+		
+		
+	</update>
+	
+	
+	<delete id="deleteContent">
+		
+		DELETE FROM HE_SitterBoard WHERE sitterboard_no = #{sitterboard_no}
+	
+	
+	</delete>
+	
+	
+	<!-- 댓글보기 -->
+	
+	<select id="readComment" resultType="com.ja.webproject.vo.HE_SitterBoard_CommentVo">
+	
+	SELECT * FROM HE_SitterBoard_Comment, HE_Member
+	WHERE HE_SitterBoard_Comment.member_no = HE_Member.member_no
+	AND HE_SitterBoard_Comment.sitterboard_no = #{sitterboard_no} 
+	ORDER BY HE_SitterBoard_Comment.comment_no DESC
+
+
+	</select>
+	
+	<!-- 댓글쓰기 -->
+	
+	<insert id="writeComment">
+	
+	INSERT INTO HE_SitterBoard_Comment VALUES (
+	
+    HE_SitterBoard_Comment_seq.nextval,
+    #{member_no},
+    #{sitterboard_no},
+    #{comment_content},
+    SYSDATE 
+    )
+	</insert>
+	
+	<!-- 댓글 수 -->
+	<select id="CommentCount" resultType="int">
+	
+	SELECT COUNT(*) From HE_SitterBoard_Comment
+	WHERE sitterboard_no = #{sitterboard_no}
+	
+	</select>
+	
+	<!-- 댓글 삭제 -->
+	
+	<delete id="deleteComment">
+	
+	DELETE FROM HE_SitterBoard_Comment WHERE comment_no = #{comment_no}
+	AND sitterboard_no = #{sitterboard_no}
+	
+	</delete>
+	
+		<!-- 추천 -->
+	<!-- =========================================================================== -->
+	
+	<insert id="doRecommend">
+	
+	INSERT INTO HE_SitterBoard_Like VALUES
+	( HE_SitterBoard_Like_seq.nextval,
+	#{sitterboard_no},
+	#{member_no},
+	sysdate )
+	
+	</insert>
+	
+	<delete id="cancelRecommend">
+	DELETE FROM HE_SitterBoard_Like 
+	WHERE sitterboard_no = #{sitterboard_no}
+	AND member_no = #{member_no}
+	</delete>
+	
+	<select id="getTotalRecommendCount" resultType="int">
+	SELECT COUNT(*) FROM HE_SitterBoard_Like
+	WHERE sitterboard_no = #{sitterboard_no}
+	
+	</select>
+	
+	<select id="getMyRecommendCount" resultType="int">
+	SELECT COUNT(*) FROM HE_SitterBoard_Like
+	WHERE sitterboard_no = #{sitterboard_no}
+	AND member_no =#{member_no}
+	
+	</select>
+	<!-- ================================================================================ -->
+	<!-- 여기까지 추천 -->
+	
+	
+	
+	<update id="updateComment">
+	
+	UPDATE HE_sitterBoard_Comment
+	SET comment_content = #{comment_content}
+	WHERE comment_no = #{comment_no}
+	and sitterboard_no = #{sitterboard_no}
+	
+	</update>
+	
+	
+	<select id="RecommendCount" resultType="int">
+	
+	SELECT COUNT(*) FROM HE_SitterBoard_Like, HE_SitterBoard
+	WHERE HE_SitterBoard_Like.sitterboard_no = HE_SitterBoard.sitterboard_no 
+	AND HE_SitterBoard.sitterboard_no = #{sitterboard_no }
+	
+	
+	</select>
+
+	
+	<!-- ==============================시터했던 횟수============================================ -->   
+   
+   <select id="sitterboardCount" resultType="int">
+      select sitterboard_no from HE_sitterboard
+      where 
+      member_no = #{member_no}
+   
+   
+   
+   </select>
+   
+   <select id="sitterCount" resultType="int">
+   
+   SELECT COUNT(*) FROM HE_Sitterboard_process
+   WHERE sitterboard_no = #{sitterboard_no}
+   and
+   STATUS = 'Y'
+   
+   
+   </select>
+
+	
+</mapper>

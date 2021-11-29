@@ -1,0 +1,214 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.ja.webproject.sitterboard_process.mapper.SitterBoard_ProcessSQLMapper"><!--class경로 -->
+
+	<!--==================================================== sitterboard_process에 
+		글 올릴 때 하는 쿼리들 ============================================== -->
+
+	<!-- ============1. 내가 올린 동일 finddogBoard글에 대하여 동일 sitterboard에 올린 자에게 신청 
+		못하도록 하는 쿼리 : 결과가 0이면신청가능, 1이면신청불가 ==================== -->
+	<select id="checkSitterRequest" resultType="int">
+
+		select count(*)
+		from HE_SitterBoard_Process
+		where
+		sitterboard_no = #{sitterboard_no}
+		and
+		finddogboard_no = #{finddogboard_no}
+		and
+		status in('ING')
+		order by sitterboard_process_no DESC
+		
+	</select>
+
+	<!-- 2.신청 -->
+	<insert id="sitterRequest">
+		insert into
+		HE_SitterBoard_Process
+		values(
+		HE_SitterBoard_Process_seq.nextval,
+		#{sitterboard_no},
+		#{finddogboard_no},
+		#{member_no},
+		#{message},
+		null,
+		'ING',
+		0,
+		SYSDATE
+		)
+	
+	</insert>
+
+	
+	<!--=================================================마이페이지에서 시터게시판 볼때(신청)=============================================================== -->
+
+	<select id="sitterRequestListPage"
+		resultType="com.ja.webproject.vo.HE_SitterBoard_ProcessVo">
+
+		select *
+		from HE_SitterBoard_Process
+		where
+		member_no = #{member_no}
+		order by sitterboard_process_no DESC
+
+	</select>
+
+	<!-- 신청 취소 -->
+	<delete id="cancelSitterRequest">
+
+		delete
+		from HE_SitterBoard_Process
+		where
+		sitterboard_process_no = #{no}
+
+	</delete>
+
+
+	<!--=====================================================마이페이지에서 시터게시판 볼때(수락)=========================================================== -->
+	<select id="getMySitterBoardList"
+		resultType="com.ja.webproject.vo.HE_SitterBoardVo">
+
+		select *
+		from HE_SitterBoard
+		where
+		member_no = #{member_no}
+		order by sitterboard_no DESC
+
+	</select>
+
+	<select id="sitterAcceptListPage"
+		resultType="com.ja.webproject.vo.HE_SitterBoard_ProcessVo">
+
+		select *
+		from HE_SitterBoard_Process
+		where
+		sitterboard_no = #{sitterboard_no}
+		order by sitterboard_process_no DESC
+
+	</select>
+	<!-- 수락 거절 버튼 클릭 시 -->
+	<delete id="cancelSitterAccept">
+
+		delete
+		from HE_SitterBoard_Process
+		where
+		sitterboard_process_no = #{no}
+
+	</delete>
+
+	<!--========================================= 수락버튼 클릭 시, status 변경 ========================================= -->
+	<!-- 1. sitterboard에 글 올린 시터인 사람이 여러 사람으로부터 신청받은 경우, 해당 수락한 글 제외하고 거절상태로 변경 -->
+	<!-- update id="change_StatusNo_AcceptAll">
+		update HE_SitterBoard_Process
+		set status = 'N'
+		where
+		status='ING'
+		and
+		sitterboard_no
+		=
+		(select sitterboard_no 
+		from HE_SitterBoard
+		where
+		member_no = #{member_no} )
+
+	</update-->
+	<!-- 위에 서브쿼리 결과가 1개 이상 -> getMySitterBoardList로 결과 받은 후, 루프 돌리기로 바꿈 -->
+	<update id="change_StatusNo_AcceptAll">
+	
+		update HE_SitterBoard_Process
+		set status = 'N'
+		where
+		status='ING'
+		and
+		sitterboard_no = #{sitterboard_no}
+		
+	</update>
+	
+	<!-- 2. finddogBoard에 글 올린 사람이 여러 시터에게 신청한 경우, 해당 수락한 시터 제외하고 거절상태로 변경 -->
+	<update id="change_StatusYes_Accept">
+		update HE_SitterBoard_Process
+		set status = 'Y',
+		acceptDate = SYSDATE
+		where
+		sitterboard_process_no = #{sitterboard_process_no}
+
+	</update>
+
+	<update id="change_StatusNo_RequestAll">
+		update
+		HE_SitterBoard_Process
+		set
+		status = 'N'
+		where
+		finddogboard_no = #{finddogboard_no}
+		and
+		status = 'ING'
+	</update>
+
+	
+	<!-- 견추적 -->
+	<select id="getFinddogHistory"  resultType="com.ja.webproject.vo.HE_SitterBoard_ProcessVo">
+	
+		select * from
+		HE_SitterBoard_Process
+		where 
+		finddogboard_no = #{finddogboard_no}
+		and 
+		status = 'Y'
+		order by sitterboard_process_no
+	
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<!-- mypage 견추적 -->
+	<select id="getMyDogHistory"  resultType="com.ja.webproject.vo.HE_SitterBoard_ProcessVo">
+	
+		select * from
+		HE_SitterBoard_Process
+		where 
+		member_no = #{member_no}
+		and 
+		status = 'Y'
+		order by sitterboard_process_no ASC
+	
+	</select>
+	
+	
+	
+	
+	
+	
+	
+
+	
+	<!-- ==============3.sitterboard 신청버튼 disable -> 
+						내가 작성한 sitterboard 글로인해 받은 요청을 수락한 경우, 
+						해당 글에서는 신청 받지 않기로!(버튼 작동 멈추게하려고)===================== -->
+
+	<!-- select id="checkMySitterBoardBtn" resultType="com.ja.webproject.vo.HE_SitterBoardVo">
+		
+		select HE_SitterBoard.*
+		from HE_SitterBoard_Process, HE_SitterBoard
+		where
+		HE_SitterBoard_Process.sitterboard_no = HE_SitterBoard.sitterboard_no
+		and
+		HE_SitterBoard_Process.status = 'Y'
+		
+	</select-->
+
+
+</mapper>
+
+
+
+

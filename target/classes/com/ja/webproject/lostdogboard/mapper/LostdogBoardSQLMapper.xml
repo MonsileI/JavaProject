@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ja.webproject.lostdogboard.mapper.LostdogBoardSQLMapper">
+
+<select id="createBoardPK" resultType="int">
+		SELECT HE_LostDogBoard_seq.nextval FROM Dual
+	</select>	
+
+
+<select id="getContents" resultType="com.ja.webproject.vo.HE_LostDogBoardVo" > <!-- resultType은 select만 필요하다! 다행 ㅠ -->
+	SELECT * FROM (	
+		SELECT t1.*,ROWNUM as rnum FROM (	
+				SELECT HE_LostDogBoard.* FROM HE_LostDogBoard ,HE_Member
+				WHERE HE_LostDogBoard.member_no = HE_Member.member_no
+				<if test="search_type != null and search_word != null">
+					<choose>
+						<when test="search_type=='title'">
+							AND HE_LostDogBoard.title LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='content'">
+							AND HE_LostDogBoardd.content LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='nick'">
+							AND HE_Member.nick LIKE '%' || #{search_word} ||'%'
+						</when>
+					</choose>
+				</if>
+				ORDER BY lostdogboard_no DESC
+			) t1
+		) t2
+		<!-- 문법을 무시하겠다는 xml의 특수문자처리(>이거 써야되니까 ㅠ) -->
+		<![CDATA[                           
+		 WHERE t2.rnum >= (#{page_number }-1)*10+1 
+		 AND t2.rnum <=  #{page_number }*10
+		]]>
+		<!-- 위에 썸네일이니까 6개만 보자 -->
+			
+	</select>
+	
+	<select id="getContentCount" resultType="int">
+			
+		
+				SELECT COUNT(*) FROM HE_LostDogBoard ,HE_Member
+				WHERE HE_LostDogBoard.member_no = HE_Member.member_no
+			
+				<if test="search_type != null and search_word != null">
+					<choose>
+						<when test="search_type=='title'">
+							AND HE_LostDogBoard.title LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='content'">
+							AND HE_LostDogBoard.content LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='nick'">
+							AND HE_Member.nick LIKE '%' || #{search_word} ||'%'
+						</when>
+					</choose>
+				</if>
+	</select>
+	
+	
+	<insert id="writeContent">
+
+	INSERT INTO HE_LostDogBoard VALUES(
+    			#{lostdogboard_no},
+    			#{member_no},
+    			#{species_no},
+				#{title},
+    			#{content},
+   				#{lostPlace},
+    			#{latitude },
+    			#{longtitude },
+    			#{lostDate },
+    			#{petName },
+    			#{petGender },
+    			#{petAge },
+				#{contact},
+    			'ING',
+    			0,
+    			SYSDATE)
+	
+	
+	
+	</insert>
+	
+		<insert id="registerImage">
+		INSERT INTO HE_LostDogBoard_ImageBoard VALUES (
+    		HE_LostDogBoard_ImageBoard_seq.nextval,
+    		#{lostdogboard_no},
+    		#{imageboard_url},
+    		#{imageboard_ori}
+			)
+	</insert>
+	
+	<update id="increaseReadCount">
+		
+		UPDATE HE_LostDogBoard 
+		SET readcount = readcount + 1
+		WHERE lostdogboard_no = #{lostdogboard_no}
+                
+	
+	</update>
+	
+	<select id="getContentByNo" resultType = "com.ja.webproject.vo.HE_LostDogBoardVo">
+	
+		SELECT * FROM HE_LostDogBoard WHERE lostdogboard_no = #{lostdogboard_no}
+		
+	</select>
+	
+	<select id="getImageInfoByBoardNo" resultType="com.ja.webproject.vo.HE_LostDogBoard_ImageBoardVo">
+		
+		SELECT * FROM HE_LostDogBoard_ImageBoard 
+		WHERE lostdogboard_no = #{lostdogboard_no}
+		ORDER BY imageboard_no ASC
+	
+		
+	</select>
+	
+	<select id="getImageForList" resultType="com.ja.webproject.vo.HE_LostDogBoard_ImageBoardVo">
+	
+		SELECT * FROM HE_LostDogBoard_ImageBoard
+		WHERE lostdogboard_no = #{lostdogboard_no }
+		AND ROWNUM = 1 <!-- 한개만 -->
+		ORDER BY imageboard_no ASC
+	
+	</select>
+	
+	
+	<update id="updateContent">
+		
+		UPDATE HE_LostDogBoard 
+		SET title = #{title} , content = #{content}
+		WHERE lostdogboard_no = #{lostdogboard_no}
+		
+		
+	</update>
+	
+	
+	<delete id="deleteContent">
+		
+		DELETE FROM HE_LostDogBoard WHERE lostdogboard_no = #{lostdogboard_no}
+	
+	
+	</delete>
+	
+	<!-- ==================================취소 버튼 기능 없애기로!!!================================================= -->
+	<!--권한 있는 자가 취소 버튼 눌렀을 떄, status='N'로 변경-->
+	<!--update id="cancelLostdog">
+	
+		update HE_lostdogBoard
+		set status = 'N'
+		where status = 'ING'
+		and lostdogboard_no = #{lostdogboard_no}
+	
+	</update-->
+	
+	<!--권한 있는 자가 완료 버튼 눌렀을 떄, status='Y'로 변경-->
+	<update id="completeLostdog">
+	
+		update HE_lostdogBoard
+		set 
+		status = #{status}
+		where
+		lostdogboard_no = #{lostdogboard_no}
+	
+	</update>
+	
+
+	
+<!-- 댓글보기 -->
+	
+	<!-- 댓글 -->
+	
+	<insert id="writeComment">
+	INSERT INTO  HE_LostdogBoard_Comment VALUES (
+    HE_LostdogBoard_Comment_seq.nextval,
+    #{lostdogboard_no},
+    #{member_no},
+    #{comment_content},
+    SYSDATE
+	)
+	</insert>
+	
+	<select id="getCommentList" resultType="com.ja.webproject.vo.HE_LostdogBoard_CommentVo">
+	SELECT * FROM HE_LostdogBoard_Comment
+	WHERE lostdogboard_no = #{lostdogboard_no}
+	ORDER By comment_no DESC
+	</select>
+	
+	<delete id="deleteComment">
+	DELETE FROM HE_LostdogBoard_Comment WHERE comment_no = #{comment_no}
+	</delete>
+	
+	<update id="updateComment">
+	UPDATE HE_LostdogBoard_Comment SET comment_content = #{comment_content}
+	WHERE comment_no = #{comment_no}
+	</update>
+	
+	<!-- 추천 -->
+	<!-- =========================================================================== -->
+	
+	<insert id="doRecommend">
+	
+	INSERT INTO HE_LostdogBoard_Like VALUES
+	( HE_LostdogBoard_Like_seq.nextval,
+	#{member_no},
+	#{lostdogboard_no},
+	sysdate )
+	
+	</insert>
+	
+	<delete id="cancelRecommend">
+	DELETE FROM HE_LostdogBoard_Like 
+	WHERE lostdogboard_no = #{lostdogboard_no}
+	AND member_no = #{member_no}
+	</delete>
+	
+	<select id="getTotalRecommendCount" resultType="int">
+	SELECT COUNT(*) FROM HE_LostdogBoard_Like
+	WHERE lostdogboard_no = #{lostdogboard_no}
+	
+	</select>
+	
+	<select id="getMyRecommendCount" resultType="int">
+	SELECT COUNT(*) FROM HE_LostdogBoard_Like
+	WHERE lostdogboard_no = #{lostdogboard_no}
+	AND member_no =#{member_no}
+	
+	</select>
+	<!-- ================================================================================ -->
+	<!-- 여기까지 추천 -->
+	
+	
+	<!--=========================================================================================-->
+	<!--=========================LostdogBoard & FinddogBoard matching system-->
+	
+	<!--  select id="getMatchingDog" resultType="com.ja.webproject.vo.HE_FinddogBoardVo">
+	select HE_FinddogBoard.member_no, HE_FinddogBaord.finddogboard_no
+	from HE_FinddogBoard , HE_LostdogBoard
+	where
+	HE_FinddogBoard.species_no = #{species_no} 
+	and
+	HE_FinddogBoard.findDate = #{lostDate}
+
+	</select--> 
+	
+	<select id="getMatchingDog" resultType="com.ja.webproject.vo.HE_FinddogBoardVo">
+		select DISTINCT HE_FinddogBoard.*
+		from HE_LostdogBoard, HE_FinddogBoard
+		where
+		HE_FinddogBoard.findDate >= #{lostDate}
+		AND 0.05 > SQRT(POWER(HE_FinddogBoard.latitude - #{latitude}, 2) + POWER(HE_FinddogBoard.longtitude - #{longtitude}, 2))
+	</select>
+	
+</mapper>

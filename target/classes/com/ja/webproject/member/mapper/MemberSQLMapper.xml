@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ja.webproject.member.mapper.MemberSQLMapper"><!--class경로 -->
+
+	<!--=======================HE_Member============================-->
+
+	<!--  회원가입 시, 중복 ID 검사 - Ajax -->
+	<select id="checkId" parameterType="com.ja.webproject.vo.HE_MemberVo" resultType="int">
+	    SELECT NVL(COUNT(*),0)
+	    FROM HE_Member 
+	    WHERE ID=#{id}
+	</select>
+	
+	<!--  회원가입 시, 중복 Nick 검사 - Ajax -->
+	<select id="checkNick" parameterType="com.ja.webproject.vo.HE_MemberVo" resultType="int">
+	    SELECT NVL(COUNT(*),0)
+	    FROM HE_Member 
+	    WHERE nick=#{nick}
+	</select>
+	
+	<!--  친구추가 시, ID 검사 - Ajax-->
+	<select id="getFriendById" resultType="com.ja.webproject.vo.HE_MemberVo">
+	    SELECT *
+	    FROM HE_Member 
+	    WHERE ID=#{id}
+	</select>
+
+	<!-- 상이 변수명, 동일결과  -->
+	<select id="getMemberByNo" resultType="com.ja.webproject.vo.HE_MemberVo">
+		select *
+		from HE_Member
+		where member_no = #{no}
+	</select>
+	
+	<select id="getMemberById" resultType="com.ja.webproject.vo.HE_MemberVo">
+		select * 
+		from HE_Member
+		where id = #{id}
+	</select>
+	
+	<!--=======================HE_NoteBox============================-->
+	<!-- 메시지 보내기 -->
+	<insert id="sendNote">
+	
+		insert into HE_NoteBox values(
+			HE_NoteBox_seq.nextval,
+			#{member_no},
+			#{friend_no},
+			#{content},
+			SYSDATE,
+			null
+		)
+	
+	</insert>
+	<!-- 매칭 메시지 보내기(admin -> member) -->
+	<insert id="sendMatchingNote">
+	
+			insert into HE_NoteBox values(
+			HE_NoteBox_seq.nextval,
+			#{admin_no},
+			#{member_no},
+			#{message},
+			SYSDATE,
+			null
+		)
+	
+	</insert>
+	
+	<!-- Toast : 내가 읽지 않은 메시지 목록에 띄워두기 -->
+	<select id="getNewToast" resultType="com.ja.webproject.vo.HE_NoteBoxVo">
+
+		select * 
+		from HE_NoteBox
+		where 
+		friend_no = #{member_no}
+		and 
+		readDate is null
+		order by notebox_no ASC
+	
+	</select>
+	
+	<select id="checkNewNote" resultType="int">
+		select count(*)
+		from HE_NoteBox
+		where 
+		friend_no = #{member_no}
+		and
+		readDate is null
+		
+	</select>
+	
+	<!-- admin Toast -->
+	<select id="checkAdminToast" resultType="com.ja.webproject.vo.HE_NoteBoxVo">
+		select t1.* from 
+			(select *
+			from HE_NoteBox
+			where
+			member_no = 1
+			and
+			friend_no = #{member_no}
+			and
+			readDate is null
+			order by notebox_no DESC
+			)t1
+		where rownum =1
+	</select>
+	
+	<select id="getContentByNo" resultType="com.ja.webproject.vo.HE_NoteBoxVo">
+		select * 
+		from HE_NoteBox
+		where notebox_no = #{notebox_no}
+	</select>
+	
+	<select id="getSentContent" resultType="com.ja.webproject.vo.HE_NoteBoxVo">
+		select * from(
+		select t1.*, ROWNUM as rnum from(
+		select HE_NoteBox.*
+		from HE_NoteBox, HE_Member
+		where HE_NoteBox.member_no = HE_Member.member_no
+		and HE_NoteBox.member_no = #{member_no}
+		<if test="search_type_sent != null and search_word_sent != null">
+			<choose>
+				<when test="search_type_sent == 'content'">
+				and HE_NoteBox.content like '%' ||
+				#{search_word_sent} ||  '%'
+				</when>
+				<when test="search_type_sent == 'nick'">
+				and HE_Member.nick like '%' ||
+				#{search_word_sent} || '%'
+				</when>
+			</choose>
+		</if>
+		order by notebox_no DESC
+		) t1
+		) t2
+		<![CDATA[
+		where t2.rnum >= (#{page_num}-1)*10+1 
+		and t2.rnum <= #{page_num} * 10
+		]]>
+	</select>
+	
+	<select id="getRecvContent" resultType="com.ja.webproject.vo.HE_NoteBoxVo">
+		select * from(
+		select t1.*, ROWNUM as rnum from(
+		select HE_NoteBox.*
+		from HE_NoteBox, HE_Member
+		where HE_NoteBox.friend_no = HE_Member.member_no
+		and HE_NoteBox.friend_no = #{member_no}
+		<if test="search_type_recv != null and search_word_recv != null">
+			<choose>
+				<when test="search_type_recv == 'content'">
+				and HE_NoteBox.content like '%' ||
+				#{search_word_recv} ||  '%'
+				</when>
+				<when test="search_type_recv == 'nick'">
+				and HE_Member.nick like '%' ||
+				#{search_word_recv} || '%'
+				</when>
+			</choose>
+		</if>
+		order by notebox_no DESC
+		) t1
+		) t2
+		<![CDATA[
+		where t2.rnum >= (#{page_num_recv}-1)*10+1 
+		and t2.rnum <= #{page_num_recv} * 10
+		]]>
+		
+	</select>
+	
+	<select id="getSentCount" resultType="int">
+		select count(*) 
+		from 
+		HE_NoteBox, HE_Member
+		where
+		HE_NoteBox.member_no = HE_Member.member_no
+		and HE_NoteBox.member_no = #{member_no}
+		<if test="search_type_sent != null and search_word_sent != null">
+			<choose>
+				<when test="search_type_sent == 'content'">
+				and HE_NoteBox.content like '%' ||
+				#{search_word_sent} ||  '%'
+				</when>
+				<when test="search_type_sent == 'nick'">
+				and HE_Member.nick like '%' ||
+				#{search_word_sent} || '%'
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	<select id="getRecvCount" resultType="int">
+		select count(*) 
+		from 
+		HE_NoteBox, HE_Member
+		where
+		HE_NoteBox.friend_no = HE_Member.member_no
+		and HE_NoteBox.friend_no = #{member_no}
+		<if test="search_type_recv != null and search_word_recv != null">
+			<choose>
+				<when test="search_type_recv == 'content'">
+				and HE_NoteBox.content like '%' ||
+				#{search_word_recv} ||  '%'
+				</when>
+				<when test="search_type_recv == 'nick'">
+				and HE_Member.nick like '%' ||
+				#{search_word_recv} || '%'
+				</when>
+			</choose>
+		</if>
+	</select>
+	
+	
+	<update id="confirmNote">
+		update HE_NoteBox
+		set
+		readDate = SYSDATE
+		where
+		notebox_no = #{notebox_no}
+		
+	</update>
+	
+	<delete id="deleteCheckedNote">
+		delete 
+		from HE_NoteBox
+		where notebox_no = #{no}
+	</delete>
+	
+	<!--=======================HE_NoteBox_GroupList============================-->
+	<select id="getGroupList" resultType="com.ja.webproject.vo.HE_NoteBox_GroupListVo">
+		select * 
+		from HE_NoteBox_GroupList
+		where member_no = #{member_no}
+		order by grouplist_no DESC
+	</select>
+	
+	<select id="getGroupListByGroupNoAndName" resultType="int">
+		select grouplist_no
+		from 
+		HE_NoteBox_GroupList
+		where
+		member_no = #{member_no} 
+		and
+		group_name = #{group_name}
+		order by grouplist_no DESC
+	</select>
+	
+	<insert id="addGroupProcess">
+		insert into HE_NoteBox_GroupList values(
+			HE_NoteBox_GroupList_seq.nextval,
+			#{no},
+			#{group_name}
+		)
+	</insert>
+	
+	<update id="updateGroupNo">
+		update HE_NoteBox_FriendList
+		set
+		grouplist_no = #{update_group_no}
+		where
+		friend_no = #{friend_no}
+	</update>
+	
+	<update id="updateGroupProcess">
+		update HE_NoteBox_GroupList 
+		set 
+		group_name = #{group_name}
+		where 
+		grouplist_no = #{grouplist_no}
+	</update>
+	
+	<delete id="deleteGroupProcess">
+		delete 
+		from HE_NoteBox_GroupList
+		where 
+		grouplist_no = #{delete_group_no}
+	</delete>
+	
+	<!--=======================HE_NoteBox_FriendList============================-->
+	<select id="checkMyFriend" resultType="int">
+		select count(*) 
+		from HE_NoteBox_FriendList
+		where 
+		grouplist_no = #{grouplist_no}
+		and
+		friend_no = #{member_no}
+		order by friendlist_no DESC
+	</select>
+	
+	<select id="getFriend" resultType="int">
+		select friend_no
+		from HE_NoteBox_FriendList
+		where grouplist_no = #{groupNo}
+		order by friendlist_no DESC
+	</select>
+	
+	<select id="getFriendListByGroupNo" resultType="com.ja.webproject.vo.HE_NoteBox_FriendListVo">
+		select * 
+		from HE_NoteBox_FriendList 
+		where 
+		grouplist_no = #{delete_group_no}
+		order by friendlist_no DESC
+	</select>
+	
+	<!--select id="checkFriendId" resultType="int">
+		select *
+		from HE_NoteBox_FriendList
+		where
+		friend_no = #{friend_no}
+		order by friendlist_no DESC
+	</select-->
+	
+	<insert id="addFriendProcess">
+		insert into HE_NoteBox_FriendList values(
+			HE_NoteBox_FriendList_seq.nextval,
+			#{grouplist_no},
+			#{friend_no}
+		)
+	</insert>
+	
+	<update id="updateFriendGroupProcess">
+		update HE_NoteBox_FriendList
+		set
+		grouplist_no = #{grouplist_no}
+		where
+		grouplist_no = #{before_grouplist_no}
+		and
+		friend_no = #{friend_no}
+	</update>
+	
+	<delete id="deleteFriendProcess">
+		delete from HE_NoteBox_FriendList
+		where
+		grouplist_no = #{grouplist_no}
+		and
+		friend_no = #{friend_no}
+	
+	</delete>
+	
+	
+	<!-- select id="getArray" resultType="">
+	select member_no, id from HE_Member
+	where member_no = 1;
+	
+	</select-->
+	
+	
+	
+	<!-- 
+	<select id="getGroupListNoByFriendNo" resultType="int">
+		select grouplist_no 
+		from HE_NoteBox_FriendList
+		where friend_no = #{friendNo}
+	</select>
+	
+		
+		<select id="existFriend" resultType="int">
+			select count(*) 
+			from HE_NoteBox_GroupList
+			where
+			grouplist_no = #{grouplistNo}
+			and
+			member_no = #{friendNo}
+		</select>
+	 -->
+	 
+
+	 
+	<!--========================================시터 요청 수락 시, 권한 변경 체크================================================-->
+	<!--========================check mydog Authority(finddogboard + sitter)=====================-->
+	<!-- 권한 -->	
+	
+	  <select id="getMyFinddogBoard" resultType="int">
+	  	select
+		finddogboard_no
+		from HE_FinddogBoard
+		where
+		member_no = #{member_no}
+	  </select>
+	  
+	  <select id="countYESFromSitterProcess" resultType="int">
+	  	select count(*)
+	  	from HE_SitterBoard_process
+	  	where
+	  	finddogboard_no = #{finddogboard_no}
+	  	and
+	  	status = 'Y'
+	  </select>
+	  
+	   <select id="getMySitterNofromSitterBoard" resultType="int">
+		select
+		sitterboard_no
+		from HE_SitterBoard
+		where 
+		member_no = #{member_no}
+	 </select>
+	  
+	  
+	<!-- 1 -->
+	<select id="getRecentSitterNoFromSitterProcessByFinddogNo" resultType="int">
+	 	select t1.sitterboard_no from
+	        (select *
+			from HE_SitterBoard_Process
+			where
+	        finddogboard_no = #{finddogboard_no}
+			and status = 'Y'
+	        order by sitterboard_process_no DESC
+	        ) t1
+        where rownum = 1
+	 </select>
+	 
+	<!-- 2 -->
+	 <select id="getFinddogNoFromSitterProcessBySitterNo" resultType="int">
+	 
+	        select distinct finddogboard_no
+			from HE_SitterBoard_Process
+			where
+	        sitterboard_no = #{sitterboard_no}
+			and status = 'Y'
+        
+	 </select>
+
+</mapper>

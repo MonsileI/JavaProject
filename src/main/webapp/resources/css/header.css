@@ -1,0 +1,90 @@
+﻿/* 전체 */
+@import url('https://fonts.googleapis.com/css?family=Cute+Font&display=swap');
+@import url('https://fonts.googleapis.com/css?family=Hi+Melody&display=swap');
+
+
+.Hi-Melody{
+	font-family: 'Hi Melody', cursive;
+}
+.font-cute {
+	font-family: 'Cute Font', cursive;
+}
+
+.bd-placeholder-img {
+	font-size: 1.125rem;
+	text-anchor: middle;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	user-select: none;
+}
+
+@media (min-width: 768px) {
+	.bd-placeholder-img-lg {
+	font-size: 3.5rem;
+	}
+}
+
+
+
+
+
+/*custom color setting
+#FFF5EA
+#F7DAD9
+*/
+
+body{/*body base*/
+	background-color:#FFFFFF;
+	
+}
+
+
+
+#header_one{
+	
+   /*display:inline;*/
+   background-color:#FFFFFF;
+
+  position:fixed;
+   z-index:3;
+}
+
+
+#header_two{
+   background-color:#FFFFFF;
+
+   position:fixed;
+   z-index:3;
+  
+}
+
+
+
+
+#dropdown_background{ /*droupdown menu backgorund*/
+	background-color:#FFFFFF;
+}
+#dropdown_background:active{
+	background-color:#FFFFFF;
+	
+}
+   
+.navbar .navbar-collapse{
+	
+	justify-content: center;
+}
+
+.nav-link{
+	background-color:#FFFFFF;
+
+	margin-left: 80px;
+	font-size: 15px;
+	
+}
+.navbar-brand-md{
+	font-size:30px;
+	margin-left: 20px;
+}
+
+
+

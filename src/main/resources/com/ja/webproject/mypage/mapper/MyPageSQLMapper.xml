@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ja.webproject.mypage.mapper.MyPageSQLMapper">
+
+	<update id="editMyId">
+	
+		update HE_Member
+		set id = #{id}
+		where member_no = #{member_no}
+	
+	</update>
+
+	<update id="editMyNick">
+	
+		update HE_Member
+		set nick = #{nick}
+		where member_no = #{member_no}
+	
+	</update>
+	
+	<update id="editMyBirth">
+	
+		update HE_Member
+		set birth = #{birth}
+		where member_no = #{member_no}
+	
+	</update>
+
+	<update id="editMyPetName">
+	
+		update HE_Member
+		set petName = #{petName}
+		where member_no = #{member_no}
+	
+	</update>
+	
+	<update id="editMyAddress">
+
+		update HE_Member
+		set address = #{address},
+		postCode = #{postCode}
+		where member_no = #{member_no}
+	
+	</update>
+	
+	
+	<select id="checkBeforePw" resultType="int">
+	
+		select count(*) from HE_Member
+		where pw = #{pw}
+		and member_no = #{member_no}
+	
+	</select>
+	
+	<update id="editMyPw">
+	
+		update HE_Member
+		set pw = #{pw}
+		where member_no = #{member_no}
+	
+	</update>
+	
+	
+	<update id="changeMailAuthInfo">
+		update HE_MailAuth
+		set
+		mail_key = #{mail_key},
+		mail_complete = 'N'
+		where
+		member_no = #{member_no}
+	</update>
+	
+	
+	<update id="certifyEditMail">
+		update HE_MailAuth
+		set 
+		mail_complete = 'Y', 
+		writeDate = SYSDATE
+		where mail_key = #{mail_key}
+	</update>
+	
+	
+	<update id="editMyEmail">
+		update HE_Member
+		set email = #{email}
+		where member_no = #{member_no}
+	</update>
+
+</mapper>

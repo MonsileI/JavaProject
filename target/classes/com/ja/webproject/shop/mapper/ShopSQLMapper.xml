@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ja.webproject.shop.mapper.ShopSQLMapper"><!--class경로 -->
+
+	<select id="getMemberByIdAndPw" resultType="com.ja.webproject.vo.HE_MemberVo">
+		select HE_Member.* from HE_Member, HE_MailAuth
+		where HE_MailAuth.member_no = HE_Member.member_no
+		and HE_Member.id = #{id} 
+		and HE_Member.pw = #{pw}
+		and HE_MailAuth.mail_complete = 'Y'
+	</select>
+	
+	<!-- HE_Member_seq -->
+	<select id = "createMemberPK" resultType="int">
+		select HE_Member_seq.nextval from Dual
+	</select>
+	
+	<!-- HE_Member table -->
+	<insert id="joinMember">
+		insert into HE_Member values(
+		#{member_no},
+		#{id},
+		#{pw},
+		#{nick},
+		#{name},
+		#{birth},
+		#{gender},
+		#{phone},
+		#{email},
+		#{postCode},
+		#{address},
+		#{petName},
+		#{coin},
+		SYSDATE
+		)
+	</insert>
+	
+	<select id="getMemberByNo" resultType="com.ja.webproject.vo.HE_MemberVo">
+		SELECT * FROM HE_Member WHERE member_no =#{no}
+	</select>
+	
+	<!-- HE_MailAuth table -->
+	<insert id="createMailAuthInfo">
+		insert into HE_MailAuth values(
+			HE_MailAuth_seq.nextval,
+			#{member_no},
+			#{mail_key},
+			'N',
+			Null
+		)
+	</insert>
+
+	<update id="certifyMail">
+		update HE_MailAuth
+		set mail_complete = 'Y', writeDate = SYSDATE
+		where mail_key = #{mail_key}
+	</update>
+	
+	<select id="getMember" resultType="com.ja.webproject.vo.HE_MemberVo">
+	select * from HE_Member
+	where member_no = #{member_no}
+	</select>
+	
+	
+</mapper>

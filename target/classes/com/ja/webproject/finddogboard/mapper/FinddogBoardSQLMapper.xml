@@ -1,0 +1,301 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.ja.webproject.finddogboard.mapper.FinddogBoardSQLMapper"><!--class경로 -->
+
+
+<select id="createBoardPK" resultType="int">
+		SELECT HE_FinddogBoard_seq.nextval FROM Dual
+</select>
+
+
+<select id="getContents" resultType="com.ja.webproject.vo.HE_FinddogBoardVo" > <!-- resultType은 select만 필요하다! 다행 ㅠ -->
+	SELECT * FROM (	
+		SELECT t1.*,ROWNUM as rnum FROM (	
+				SELECT HE_FinddogBoard.* FROM HE_FinddogBoard ,HE_Member
+				WHERE HE_FinddogBoard.member_no = HE_Member.member_no
+				
+				<if test="search_type != null and search_word != null">
+					<choose>
+						<when test="search_type=='title'">
+							AND HE_FinddogBoard.title LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='content'">
+							AND HE_FinddogBoard.content LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='nick'">
+							AND HE_Member.nick LIKE '%' || #{search_word} ||'%'
+						</when>
+					</choose>
+				</if>
+				ORDER BY finddogboard_no DESC
+			) t1
+		) t2
+		<!-- 문법을 무시하겠다는 xml의 특수문자처리(>이거 써야되니까 ㅠ) -->
+		<![CDATA[                           
+		 WHERE t2.rnum >= (#{page_number }-1)*10+1 
+		 AND t2.rnum <=  #{page_number }*10
+		]]>
+		<!-- 위에 썸네일이니까 6개만 보자 -->
+			
+	</select>
+	
+	<select id="getContentCount" resultType="int">
+			
+		
+				SELECT COUNT(*) FROM HE_FinddogBoard ,HE_Member
+				WHERE HE_FinddogBoard.member_no = HE_Member.member_no
+			
+				<if test="search_type != null and search_word != null">
+					<choose>
+						<when test="search_type=='title'">
+							AND HE_FinddogBoard.title LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='content'">
+							AND HE_FinddogBoard.content LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='nick'">
+							AND HE_Member.nick LIKE '%' || #{search_word} ||'%'
+						</when>
+					</choose>
+				</if>
+	</select>
+	
+	
+	<select id="getSpeciesCategoryList" resultType="com.ja.webproject.vo.HE_Species_CategoryVo">
+		select * 
+		from HE_Species_Category
+		order by 
+		species_no ASC
+	</select>
+	
+	
+	<!-- 본인이 쓴 finddogBoard 게시글 리스트 가져오기 -->
+	<select id="getMyFinddogBoardNo" resultType="com.ja.webproject.vo.HE_FinddogBoardVo">	
+	
+		select *
+		from HE_FinddogBoard
+		where
+		member_no = #{member_no}
+		and
+		status = 'ING'
+	
+	</select>
+	
+	
+	<!--myPage에서 시터 신청 목록 보여줄 때,finddogBoard 글이 원래 내 글이었는 지 체크-->
+	<select id="checkMyFinddogBoard" resultType="int">
+		select count(*)
+		from HE_FinddogBoard
+		where 
+		finddogboard_no = #{finddogboard_no}
+		and
+		member_no = #{member_no}
+	</select>
+	
+	<insert id="writeContent">    
+	
+	INSERT INTO HE_FinddogBoard VALUES(
+    			#{finddogboard_no},
+    			#{member_no},
+    			#{species_no},
+    			#{title},
+    			#{content},
+    			#{findPlace},
+    			#{latitude},
+    			#{longtitude},
+    			#{findDate},
+    			#{petName},
+    			#{petGender},
+    			#{petAge},
+    			#{contact},
+    			'ING',
+    			0,
+    			SYSDATE
+    			)
+	</insert>
+	
+		<insert id="registerImage">
+		INSERT INTO HE_FinddogBoard_ImageBoard VALUES (
+    		HE_FinddogBoard_ImageBoard_seq.nextval,
+    		#{finddogboard_no},
+    		#{imageboard_url},
+    		#{imageboard_ori}
+			)
+	</insert>
+	
+	<update id="increaseReadCount">
+		
+		UPDATE HE_FinddogBoard 
+		SET readcount = readcount + 1
+		WHERE finddogboard_no = #{finddogboard_no}
+                
+	
+	</update>
+	
+	<select id="getContentByNo" resultType = "com.ja.webproject.vo.HE_FinddogBoardVo">
+	
+		SELECT * FROM HE_FinddogBoard WHERE finddogboard_no = #{finddogboard_no}
+		
+	</select>
+	
+	
+	<!--finddogBoard 버튼 권한-->
+	<select id="grantAuthority" resultType="com.ja.webproject.vo.HE_SitterBoard_ProcessVo">
+	
+		select * from HE_SitterBoard_Process
+		where
+		finddogboard_no = #{finddogboard_no}
+		and
+		status = 'Y'
+		order by sitterboard_process_no DESC
+	
+	</select>
+	
+	
+	<select id="getMemberNo_havingAuthority" resultType="com.ja.webproject.vo.HE_SitterBoardVo">
+	
+		select * from HE_SitterBoard
+		where
+		sitterboard_no = #{sitterboard_no}
+		
+	</select>
+	
+	<!-- ============================취소버튼 기능 없애기로!!!========================================== -->
+	<!--권한 있는 자가 취소 버튼 눌렀을 떄, status='N'로 변경-->
+	<!--update id="cancelFinddog">
+	
+		update HE_finddogBoard
+		set status = 'N'
+		where status = 'ING'
+		and finddogboard_no = #{finddogboard_no}
+	
+	</update-->
+	
+	
+	<update id="completeFinddog">
+	
+		update HE_finddogBoard
+		set 
+		status = #{status}
+		where
+		finddogboard_no = #{finddogboard_no}
+	
+	</update>
+	
+	
+
+	<select id="getImageInfoByBoardNo" resultType="com.ja.webproject.vo.HE_FinddogBoard_ImageBoardVo">
+
+		SELECT * FROM HE_FinddogBoard_ImageBoard
+		WHERE finddogboard_no = #{finddogboard_no}
+		ORDER BY imageboard_no ASC
+
+
+	</select>
+
+	<select id="getImageForList" resultType="com.ja.webproject.vo.HE_FinddogBoard_ImageBoardVo">
+
+		SELECT * FROM HE_FinddogBoard_ImageBoard
+		WHERE finddogboard_no = #{finddogboard_no }
+		AND ROWNUM = 1 <!-- 한개만 -->
+		ORDER BY imageboard_no ASC
+
+	</select>
+
+	<update id="updateContent">
+
+		UPDATE HE_FinddogBoard
+		SET title = #{title} , content = #{content}
+		WHERE finddogboard_no = #{finddogboard_no}
+
+	</update>
+
+
+	<delete id="deleteContent">
+
+		DELETE FROM HE_FinddogBoard WHERE finddogboard_no = #{finddogboard_no}
+
+
+	</delete>
+
+
+	<!-- 댓글보기 -->
+
+	<!-- 댓글 -->
+
+	<insert id="writeComment">
+	INSERT INTO  HE_FinddogBoard_Comment VALUES (
+    HE_FinddogBoard_Comment_seq.nextval,
+    #{finddogboard_no},
+    #{member_no},
+    #{comment_content},
+    SYSDATE
+	)
+	</insert>
+
+	<select id="getCommentList" resultType="com.ja.webproject.vo.HE_FinddogBoard_CommentVo">
+	SELECT * FROM HE_FinddogBoard_Comment
+	WHERE finddogboard_no = #{finddogboard_no}
+	ORDER By comment_no DESC
+	</select>
+
+	<delete id="deleteComment">
+	DELETE FROM HE_FinddogBoard_Comment WHERE comment_no = #{comment_no}
+	</delete>
+
+	<update id="updateComment">
+	UPDATE HE_FinddogBoard_Comment SET comment_content = #{comment_content}
+	WHERE comment_no = #{comment_no}
+	</update>
+
+
+	
+	<!-- 추천 -->
+	<!-- =========================================================================== -->
+	
+	<insert id="doRecommend">
+	
+	INSERT INTO HE_FinddogBoard_Like VALUES
+	( HE_FinddogBoard_Like_seq.nextval,
+	#{member_no},
+	#{finddogboard_no},
+	sysdate )
+	
+	</insert>
+	
+	<delete id="cancelRecommend">
+	DELETE FROM HE_FinddogBoard_Like 
+	WHERE finddogboard_no = #{finddogboard_no}
+	AND member_no = #{member_no}
+	</delete>
+	
+	<select id="getTotalRecommendCount" resultType="int">
+	SELECT COUNT(*) FROM HE_FinddogBoard_Like
+	WHERE finddogboard_no = #{finddogboard_no}
+	
+	</select>
+	
+	<select id="getMyRecommendCount" resultType="int">
+	SELECT COUNT(*) FROM HE_FinddogBoard_Like
+	WHERE finddogboard_no = #{finddogboard_no}
+	AND member_no =#{member_no}
+	
+	</select>
+	<!-- ================================================================================ -->
+	<!-- 여기까지 추천 -->
+	
+	<!--=========================================================================================-->
+	<!--=========================LostdogBoard & FinddogBoard matching system-->
+	
+	<select id="getMatchingDog" resultType="com.ja.webproject.vo.HE_LostDogBoardVo">
+		select DISTINCT HE_LostdogBoard.*
+		from HE_FinddogBoard, HE_LostdogBoard
+		where
+		#{findDate} >= HE_LostdogBoard.LostDate
+		AND 0.05 > SQRT(POWER(HE_LostDogBoard.latitude - #{latitude}, 2) + POWER(HE_LostDogBoard.longtitude -#{longtitude}, 2))
+	</select>
+		
+
+</mapper>

@@ -1,0 +1,171 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ja.webproject.chattingboard.mapper.ChattingBoardSQLMapper"><!--class경로 -->
+
+
+
+<select id="getChattingContents" resultType="com.ja.webproject.vo.HE_ChattingBoardVo" > <!-- resultType은 select만 필요하다! 다행 ㅠ -->
+	SELECT * FROM (	
+		SELECT t1.*,ROWNUM as rnum FROM (	
+				SELECT HE_ChattingBoard.* FROM HE_ChattingBoard ,HE_Member
+				WHERE HE_ChattingBoard.member_no = HE_Member.member_no
+				
+				<if test="search_type != null and search_word != null">
+					<choose>
+						<when test="search_type=='title'">
+							AND HE_ChattingBoard.title LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='nick'">
+							AND HE_Member.nick LIKE '%' || #{search_word} ||'%'
+						</when>
+					</choose>
+				</if>
+				ORDER BY chattingboard_no DESC
+			) t1
+		) t2
+		<!-- 문법을 무시하겠다는 xml의 특수문자처리(>이거 써야되니까 ㅠ) -->
+		<![CDATA[                           
+		 WHERE t2.rnum >= (#{page_number }-1)*6+1 
+		 AND t2.rnum <=  #{page_number }*6
+		]]>
+		<!-- 위에 썸네일이니까 6개만 보자 -->
+			
+	</select>
+	
+	<select id="getChattingContentCount" resultType="int">
+			
+		
+				SELECT COUNT(*) FROM HE_ChattingBoard ,HE_Member
+				WHERE HE_ChattingBoard.member_no = HE_Member.member_no
+			
+				<if test="search_type != null and search_word != null">
+					<choose>
+						<when test="search_type=='title'">
+							AND HE_ChattingBoard.title LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='nick'">
+							AND HE_Member.nick LIKE '%' || #{search_word} ||'%'
+						</when>
+					</choose>
+				</if>
+	</select>
+
+	<!-- ===============채팅방 만들기=========== -->
+	<insert id="MakeChattingProcess">
+	
+		INSERT INTO HE_ChattingBoard VALUES(
+			HE_ChattingBoard_seq.nextval,
+			#{member_no },
+    		#{title },
+   			SYSDATE
+		)
+	
+	</insert>
+	
+	<!--  =============채팅방 호스트 자동 입장========== -->
+	
+	<select id="joinMyChattingRoom" resultType="int">
+	
+	
+		select chattingboard_no from(
+			select chattingboard_no from
+			HE_ChattingBoard
+			where member_no = #{member_no}
+			order by chattingboard_no DESC
+			)
+			where rownum =1
+    
+	
+	</select>
+	
+	<!-- =================채팅ing====================== -->
+
+
+	<insert id="writeChattingProcess">
+	
+		INSERT INTO HE_ChattingRoomboard VALUES(
+			HE_ChattingRoomBoard_seq.nextval,
+			#{chattingboard_no },
+			#{member_no },
+			#{chatting_content },
+			'ing',
+			SYSDATE
+			
+		)
+		
+		
+	
+	</insert>
+	<!--  ================채팅방 참여하기 -->
+	
+	<select id="joinChattingRoom" resultType="com.ja.webproject.vo.HE_ChattingBoardVo">
+	
+	select * from HE_ChattingBoard
+	WHERE chattingboard_no =#{chattingboard_no }
+	
+	
+	</select>
+	
+	
+	
+	<!--  ================채팅 글보기==================== -->
+	
+	<select id="getChattingList" resultType="com.ja.webproject.vo.HE_ChattingRoomBoardVo">
+	
+	select * from HE_ChattingRoomboard
+	where chattingboard_no = #{chattingboard_no }
+	order by chattingroomboard_no asc
+	
+	</select>
+	
+	<!--  ===============채팅글 지우기 ======================-->
+	
+	<delete id="deleteChatting">
+	
+	delete from HE_ChattingRoomboard
+	where chattingroomboard_no = #{chattingroomboard_no }
+	
+	
+	</delete>
+	<!-- ================채팅방 나가기======================== -->
+	<update id="exitChattingRoom">
+	
+	UPDATE HE_ChattingRoomboard 
+	SET chatting_status = 'n'
+	WHERE chattingboard_no = #{chattingboard_no}
+	and member_no = #{member_no}
+	
+	<!-- ================채팅방 없앨지 말지 확인하기 위해 status count 해주는 쿼리====== -->
+	
+	</update>
+	
+	<select id="checkChattingRoomStatus" resultType="int">
+	
+		select count(*) from HE_ChattingRoomBoard
+		where chattingboard_no = #{chattingboard_no }
+		and chatting_status = 'ing'
+	
+	
+	</select>
+	
+	<!-- ===============채팅방 자체를 없애는 쿼리 -->
+	
+	<delete id="deleteChattingRoom">
+	
+		delete from HE_Chattingboard
+		where chattingboard_no = #{chattingboard_no }
+	
+	
+	</delete>
+	
+	<!-- ===============채팅글 없애는 쿼리 -->
+	<delete id="deleteChattingComment">
+	
+		delete from HE_ChattingRoomBoard 
+		where chattingboard_no = #{chattingboard_no}
+	
+	</delete>
+	
+	
+</mapper>

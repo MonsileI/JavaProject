@@ -1,0 +1,7 @@
+﻿/* 하단 푸터 */
+footer {
+	color:#090721;
+    height:100px;
+    margin:200px 100px 100px 100px;
+    border-top:solid 1px #090721;
+}

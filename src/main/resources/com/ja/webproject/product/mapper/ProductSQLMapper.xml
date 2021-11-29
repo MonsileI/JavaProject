@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ja.webproject.product.mapper.ProductSQLMapper">
+
+	<select id="createProductPK" resultType="int">
+		SELECT product_seq.nextval FROM dual
+	</select>
+	
+	<!-- 물품 등록  -->
+	<insert id="productWrite">
+		INSERT INTO Product values(
+		#{product_no},
+		#{store_no},
+		0,
+		#{product_content},
+		#{product_name},
+		#{product_price},
+		#{product_amount},
+		#{product_image},
+		SYSDATE
+	    )
+	</insert>
+			
+	<select id="getProductList" resultType="com.ja.webproject.vo.ProductVo">
+		SELECT * FROM Product 
+		WHERE store_no = #{store_no}
+		ORDER BY product_no DESC
+	</select>
+	
+	<!-- 게시글 개수 -->
+	<select id="getProductCount" resultType="int">
+		SELECT COUNT(*) FROM Product 	
+		WHERE store_no = #{store_no}
+	</select>
+	
+	<!-- 상세 물품 페이지 -->
+	<select id="getProductByNo" resultType="com.ja.webproject.vo.ProductVo">
+		SELECT * FROM Product
+		WHERE product_no = #{product_no}
+	</select>
+	
+	<!-- 물품 삭제 -->
+	<delete id="deleteProductByNo">
+		DELETE FROM Product
+		WHERE product_no=#{product_no}
+	</delete>
+	
+	<!-- Store에서 member_no가져오기 -->
+	<select id="getStore" resultType="com.ja.webproject.vo.StoreVo">
+		SELECT * FROM Store
+		WHERE store_no = #{store_no}
+	</select>
+
+	<insert id="buy">
+		INSERT INTO Buy VALUES(
+			buy_seq.nextval,
+			#{product_no},
+			#{member_no},
+			#{buy_amount},
+			SYSDATE)
+	</insert>
+	
+	<select id="remainAmount" resultType="int">
+	SELECT 
+	product_amount - (
+	SELECT NVL(SUM(buy_amount),0) FROM Buy WHERE product_no = #{product_no})
+	FROM product WHERE product_no = #{product_no}
+	</select>
+
+
+</mapper>

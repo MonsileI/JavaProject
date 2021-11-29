@@ -1,0 +1,325 @@
+/*
+#arrowFirst{
+	position:fixed;
+	top:35%;
+	right:5.8%;
+	
+	border-radius:0%;
+	z-index:2;
+	
+}
+
+#arrowSecond{
+	position:fixed;
+	top:42%;
+	right:5.8%;
+	border-radius:0%;
+	z-index:2;
+}
+#arrowThird{
+	position:fixed;
+	top:49%;
+	right:5.8%;
+	border-radius:0%;
+	z-index:2;
+}
+
+*/
+
+/*
+#838e9f
+#838e9f
+#ff6796
+*/
+
+/*
+#b0ff00
+
+background-color: #F9F9F9; 
+color: #BDBDB
+#333333;
+*/
+
+
+
+
+/*
+#sideTitle{
+	
+	position:fixed;
+	top:20%;
+	right:3.5%;
+	width:120px;
+	height:30px;
+	
+	
+	text-align:center;
+	font-size:13px;
+	
+	background-color: #E2F4FF; 
+	color: #333333;
+	
+	border-radius:0%;
+	border-width:0px;
+	
+}
+*/
+#textFirst{
+	position:fixed;
+	top:63%;
+	right:1%;
+	width:580px;
+	text-align:right;
+	font-size:13px;
+	
+	border-radius:0%;
+	border-width:0px;
+	background-color:rgb(0,0,0,0);
+	color:rgb(0,0,0,0);
+	opacity:0;
+	z-index:0;
+	
+}
+
+#sideFirst:hover #textFirst{
+	background-color:rgb(0,0,0,0);
+	opacity:1;
+	z-index:2;
+	color:#333333;
+	
+}
+
+#sideFirst{
+	position:fixed;
+	top:63%;
+	right:1%;
+
+
+	text-align:center;
+	font-size:13px;
+	
+	background-color: #E2F4FF; 
+	color: #333333;
+	
+	
+    display: inline-block;
+    height: 45px;
+    margin-left: 20px;
+    margin-top: 55px;
+    width: 80px;
+    border-width:0px;
+    
+    }
+    
+    #sideFirst:before {
+      border-top: 30px solid #E2F4FF;
+      border-left: 40px solid transparent;
+      border-right: 40px solid transparent;
+      content: "";
+      height: 0;
+      left: 0;
+      position: absolute;
+      bottom: -30px;
+      width: 0;
+      
+    }
+}
+
+
+#textSecond{
+	position:fixed;
+	top:72%;
+	right:1%;
+	width:580px;
+	text-align:right;
+	font-size:13px;
+	
+	border-radius:0%;
+	
+	background-color:rgb(0,0,0,0);
+	color:rgb(0,0,0,0);
+	opacity:0;
+	z-index:0;
+
+}
+
+#sideSecond:hover #textSecond{
+	background-color:rgb(0,0,0,0);
+	opacity:1;
+	z-index:2;
+	color:#333333;
+	
+	
+}
+
+
+
+#sideSecond{
+	
+	position:fixed;
+	top:72%;
+	right:1%;
+
+
+	text-align:center;
+	font-size:13px;
+	
+	background-color: #E2F4FF; 
+	color: #333333;
+	
+	
+    display: inline-block;
+    height: 45px;
+    margin-left: 20px;
+    margin-top: 55px;
+    width: 80px;
+    border-width:0px;
+    
+    }
+    
+    #sideSecond:before {
+      border-top: 30px solid #E2F4FF;
+      border-left: 40px solid transparent;
+      border-right: 40px solid transparent;
+      content: "";
+      height: 0;
+      left: 0;
+      position: absolute;
+      bottom: -30px;
+      width: 0;
+      
+    }
+	
+}
+
+
+#textThird{
+	position:fixed;
+	top:81%;
+	right:1%;
+	width: 450px;
+	text-align:right;
+	font-size:13px;
+	
+	border-radius:0%;
+	
+	background-color:rgb(0,0,0,0);
+	color:rgb(0,0,0,0);
+	opacity:0;
+	z-index:0;
+	
+}
+
+#sideThird:hover #textThird{
+
+	background-color:rgb(0,0,0,0);
+	opacity:1;
+	z-index:2;
+	color:#333333;
+	
+}
+
+#sideThird{
+	position:fixed;
+	top:81%;
+	right:1%;
+
+
+	text-align:center;
+	font-size:13px;
+	
+	background-color: #E2F4FF; 
+	color: #333333;
+	
+	
+    display: inline-block;
+    height: 45px;
+    margin-left: 20px;
+    margin-top: 55px;
+    width: 80px;
+    border-width:0px;
+    
+    }
+    
+    #sideThird:before {
+      border-top: 30px solid #E2F4FF;
+      border-left: 40px solid transparent;
+      border-right: 40px solid transparent;
+      content: "";
+      height: 0;
+      left: 0;
+      position: absolute;
+      bottom: -30px;
+      width: 0;
+      
+    }
+	
+}
+
+
+
+#textFour{
+	position:fixed;
+	top:90;
+	right:1%;
+	width:350px;
+	text-align:right;
+	font-size:20px;
+
+	
+	border-radius:0%;
+	
+		background-color:rgb(0,0,0,0);
+	color:rgb(0,0,0,0);
+	opacity:0;
+	z-index:0;
+	
+	
+}
+
+#sideFour:hover #textFour{
+		opacity:1;
+		z-index:2;
+	
+}
+
+
+#sideFour{
+	position:fixed;
+	top:90%;
+	right:1%;
+
+
+	text-align:center;
+	font-size:13px;
+	
+	background-color: #E2F4FF; 
+	color: #333333;
+	
+	
+    display: inline-block;
+    height: 45px;
+    margin-left: 20px;
+    margin-top: 55px;
+    width: 80px;
+    border-width:0px;
+    
+    }
+    
+    #sideFour:before {
+      border-top: 30px solid #E2F4FF;
+      border-left: 40px solid transparent;
+      border-right: 40px solid transparent;
+      content: "";
+      height: 0;
+      left: 0;
+      position: absolute;
+      bottom: -30px;
+      width: 0;
+      
+      
+    }
+}
+
+
+

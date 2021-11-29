@@ -1,0 +1,238 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.ja.webproject.articleboard.mapper.ArticleBoardSQLMapper"><!--class경로 -->
+
+
+<select id="createBoardPK" resultType="int">
+
+		SELECT HE_ArticleBoard_seq.nextval FROM Dual
+</select>
+
+
+<select id="getContents" resultType="com.ja.webproject.vo.HE_ArticleBoardVo" > <!-- resultType은 select만 필요하다! 다행 ㅠ -->
+	SELECT * FROM (	
+		SELECT t1.*,ROWNUM as rnum FROM (	
+				SELECT HE_ArticleBoard.* FROM HE_ArticleBoard ,HE_Member
+				WHERE HE_ArticleBoard.member_no = HE_Member.member_no
+				
+				<if test="search_type != null and search_word != null">
+					<choose>
+						<when test="search_type=='title'">
+							AND HE_ArticleBoard.title LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='content'">
+							AND HE_ArticleBoard.content LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='nick'">
+							AND HE_Member.nick LIKE '%' || #{search_word} ||'%'
+						</when>
+					</choose>
+				</if>
+				ORDER BY articleboard_no DESC
+			) t1
+		) t2
+		<!-- 문법을 무시하겠다는 xml의 특수문자처리(>이거 써야되니까 ㅠ) -->
+		<![CDATA[                           
+		 WHERE t2.rnum >= (#{page_number }-1)*6+1 
+		 AND t2.rnum <=  #{page_number }*6
+		]]>
+		<!-- 위에 썸네일이니까 6개만 보자 -->
+			
+	</select>
+	
+	<select id="getContentCount" resultType="int">
+			
+		
+				SELECT COUNT(*) FROM HE_ArticleBoard ,HE_Member
+				WHERE HE_ArticleBoard.member_no = HE_Member.member_no
+			
+				<if test="search_type != null and search_word != null">
+					<choose>
+						<when test="search_type=='title'">
+							AND HE_ArticleBoard.title LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='content'">
+							AND HE_ArticleBoard.content LIKE '%' || #{search_word} ||'%'
+						</when>
+						<when test="search_type=='nick'">
+							AND HE_Member.nick LIKE '%' || #{search_word} ||'%'
+						</when>
+					</choose>
+				</if>
+	</select>
+	
+	
+	
+	
+	<insert id="writeContent">    
+	
+	INSERT INTO HE_ArticleBoard VALUES(
+    			#{articleboard_no},
+    			#{member_no},
+    			#{title},
+    			#{content},
+    			0,
+    			SYSDATE
+    			)
+	</insert>
+	
+		<insert id="registerImage">
+		INSERT INTO HE_ArticleBoard_ImageBoard VALUES (
+    		HE_ArticleBoard_ImageBoard_seq.nextval,
+    		#{articleboard_no},
+    		#{imageboard_url},
+    		#{imageboard_ori}
+			)
+			
+	</insert>
+	
+	<update id="increaseReadCount">
+		
+		UPDATE HE_ArticleBoard 
+		SET readcount = readcount + 1
+		WHERE articleboard_no = #{articleboard_no}
+                
+	
+	</update>
+	
+	<select id="getContentByNo" resultType = "com.ja.webproject.vo.HE_ArticleBoardVo">
+	
+		SELECT * FROM HE_ArticleBoard WHERE articleboard_no = #{articleboard_no}
+		
+	</select>
+	
+
+	<select id="getImageInfoByBoardNo" resultType="com.ja.webproject.vo.HE_ArticleBoard_ImageBoardVo">
+		
+		SELECT * FROM HE_ArticleBoard_ImageBoard
+		WHERE articleboard_no = #{articleboard_no}
+		ORDER BY imageboard_no ASC
+	
+		
+	</select>
+	
+	<select id="getImageForList" resultType="com.ja.webproject.vo.HE_ArticleBoard_ImageBoardVo">
+	
+		SELECT * FROM HE_ArticleBoard_ImageBoard
+		WHERE articleboard_no = #{articleboard_no }
+		AND ROWNUM = 1 <!-- 한개만 -->
+		ORDER BY imageboard_no ASC
+	
+	</select>
+	
+	<update id="updateContent">
+		
+		UPDATE HE_ArticleBoard 
+		SET title = #{title} , content = #{content}
+		WHERE articleboard_no = #{articleboard_no}
+		
+		
+	</update>
+	
+	
+	<delete id="deleteContent">
+		
+		DELETE FROM HE_ArticleBoard WHERE articleboard_no = #{articleboard_no}
+	
+	
+	</delete>
+	
+	
+	<!-- 댓글보기 -->
+	
+	<select id="readComment" resultType="com.ja.webproject.vo.HE_ArticleBoard_CommentVo">
+	
+	SELECT * FROM HE_ArticleBoard_Comment, HE_Member
+	WHERE HE_ArticleBoard_Comment.member_no = HE_Member.member_no
+	AND HE_ArticleBoard_Comment.articleboard_no = #{articleboard_no} 
+	ORDER BY HE_ArticleBoard_Comment.comment_no DESC
+
+	
+	
+	</select>
+	
+	<!-- 댓글쓰기 -->
+	
+	<insert id="writeComment">
+	
+	INSERT INTO HE_ArticleBoard_Comment VALUES (
+	
+    HE_ArticleBoard_Comment_seq.nextval,
+    #{member_no},
+    #{articleboard_no},
+    #{comment_content},
+    SYSDATE )
+    
+	
+	</insert>
+	
+
+	
+	<!-- 댓글 수 -->
+	<select id="CommentCount" resultType="int">
+	
+	SELECT COUNT(*) From HE_ArticleBoard_Comment
+	WHERE articleboard_no = #{articleboard_no}
+	
+	
+	</select>
+	
+	<!-- 댓글 삭제 -->
+	
+	<delete id="deleteComment">
+	
+	DELETE FROM HE_ArticleBoard_Comment WHERE comment_no = #{comment_no}
+	AND articleboard_no = #{articleboard_no}
+	
+	</delete>
+	
+	<update id="updateComment">
+	
+	UPDATE HE_ArticleBoard_Comment
+	SET comment_content = #{comment_content}
+	WHERE comment_no = #{comment_no}
+	and articleboard_no = #{articleboard_no}
+	
+	</update>
+	
+	<!-- 추천 -->
+	<!-- =========================================================================== -->
+	
+	<insert id="doRecommend">
+	
+	INSERT INTO HE_ArticleBoard_Like VALUES
+	( HE_ArticleBoard_Like_seq.nextval,
+	#{member_no},
+	#{articleboard_no},
+	sysdate )
+	
+	</insert>
+	
+	<delete id="cancelRecommend">
+	DELETE FROM HE_ArticleBoard_Like 
+	WHERE articleboard_no = #{articleboard_no}
+	AND member_no = #{member_no}
+	</delete>
+	
+	<select id="getTotalRecommendCount" resultType="int">
+	SELECT COUNT(*) FROM HE_ArticleBoard_Like
+	WHERE finddogboard_no = #{finddogboard_no}
+	
+	</select>
+	
+	<select id="getMyRecommendCount" resultType="int">
+	SELECT COUNT(*) FROM HE_FinddogBoard_Like
+	WHERE finddogboard_no = #{finddogboard_no}
+	AND member_no =#{member_no}
+	
+	</select>
+	<!-- ================================================================================ -->
+	<!-- 여기까지 추천 -->
+
+	
+	
+		
+
+</mapper>
